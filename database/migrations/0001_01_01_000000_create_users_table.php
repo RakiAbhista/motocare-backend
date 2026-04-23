@@ -11,12 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::create('roles', function (Blueprint $table) {
+            $table->id();
+            $table->string('role_name');
+            $table->timestamps();
+        });
+
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            // Menambahkan foreign key untuk role
+            $table->enum('role', ['customer', 'mechanic', 'customer_service', 'admin'])->default('customer'); // 1 untuk admin, 2 untuk user biasa
+            
+            // Mengubah 'name' menjadi 'full_name' sesuai spek MotoCare kamu
+            $table->string('full_name'); 
+            $table->string('phone_number')->nullable(); // Ditambah untuk keperluan Emergency
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->integer('points')->default(0); // Ditambah sesuai spek MotoCare
             $table->rememberToken();
             $table->timestamps();
         });
