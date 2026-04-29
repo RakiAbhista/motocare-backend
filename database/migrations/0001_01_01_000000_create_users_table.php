@@ -23,7 +23,7 @@ return new class extends Migration
             $table->enum('role', ['customer', 'mechanic', 'customer_service', 'admin'])->default('customer'); // 1 untuk admin, 2 untuk user biasa
             
             // Mengubah 'name' menjadi 'full_name' sesuai spek MotoCare kamu
-            $table->string('full_name'); 
+            $table->string('name'); 
             $table->string('phone_number')->nullable(); // Ditambah untuk keperluan Emergency
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();

@@ -9,16 +9,22 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password'])]
+/**
+ * Model User untuk Aplikasi Motocare.
+ * Menggunakan Laravel 13 style dengan Attributes untuk fillable dan hidden.
+ */
+#[Fillable(['name', 'email', 'password', 'role'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasApiTokens;
 
     /**
-     * Get the attributes that should be cast.
+     * Casting atribut.
+     * Di Laravel 13, password otomatis di-hash jika menggunakan cast 'hashed'.
      *
      * @return array<string, string>
      */
@@ -28,5 +34,29 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Helper untuk mengecek role user di dalam code.
+     * Contoh penggunaan: if($user->isAdmin()) { ... }
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isMechanic(): bool
+    {
+        return $this->role === 'mechanic';
+    }
+
+    public function isCustomer(): bool
+    {
+        return $this->role === 'customer';
+    }
+
+    public function isCS(): bool
+    {
+        return $this->role === 'cs';
     }
 }
