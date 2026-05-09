@@ -7,11 +7,17 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function register(Request $request) {
+    /**
+     * User registration
+     */
+    public function register(Request $request)
+    {
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
@@ -26,33 +32,116 @@ class AuthController extends Controller
             'role' => $request->role,
         ]);
 
-        $token = $user->createToken('motocare_token')->plainTextToken;
+        // Login otomatis setelah registrasi
+        Auth::login($user);
+        $request->session()->regenerate();
 
         return response()->json([
             'status' => 'success',
             'message' => 'Registrasi berhasil',
-            'token' => $token,
             'user' => $user
         ], 201);
     }
 
-    public function login(Request $request) {
-        $request->validate(['email' => 'required|email', 'password' => 'required']);
-        $user = User::where('email', $request->email)->first();
+    /**
+     * User login with session-based authentication
+     */
+    public function login(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
+            ]);
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Email atau password salah'], 401);
+            $user = User::where('email', $validated['email'])->first();
+
+            if (!$user || !Hash::check($validated['password'], $user->password)) {
+                throw ValidationException::withMessages([
+                    'email' => ['Email atau password salah.'],
+                ]);
+            }
+
+            // Use session-based auth, NOT token
+            Auth::login($user);
+            $request->session()->regenerate();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Login berhasil',
+                'user' => $user,
+                'role' => $user->role,
+            ], 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validasi gagal',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Login gagal',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * User logout
+     */
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Logout berhasil',
+        ], 200);
+    }
+
+    /**
+     * Get current authenticated user
+     */
+    public function me(Request $request)
+    {
+        if (!Auth::check()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Tidak terautentikasi',
+            ], 401);
         }
 
         return response()->json([
-            'token' => $user->createToken('motocare_token')->plainTextToken,
-            'message' => 'Login Berhasil!',
-            'role' => $user->role,
-            'user' => $user
-        ]);
+            'status' => 'success',
+            'user' => Auth::user(),
+        ], 200);
     }
 
-    public function forgotPassword(Request $request) {
+    /**
+     * Check if user is authenticated (untuk frontend page refresh)
+     */
+    public function checkAuth(Request $request)
+    {
+        if (Auth::check()) {
+            return response()->json([
+                'authenticated' => true,
+                'user' => Auth::user(),
+            ], 200);
+        }
+
+        return response()->json([
+            'authenticated' => false,
+        ], 401);
+    }
+
+    /**
+     * Forgot password
+     */
+    public function forgotPassword(Request $request)
+    {
         $request->validate(['email' => 'required|email']);
 
         $status = Password::sendResetLink($request->only('email'));
@@ -62,7 +151,11 @@ class AuthController extends Controller
             : response()->json(['message' => 'Gagal mengirim email, pastikan email terdaftar.'], 400);
     }
 
-    public function resetPassword(Request $request) {
+    /**
+     * Reset password
+     */
+    public function resetPassword(Request $request)
+    {
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
@@ -84,8 +177,14 @@ class AuthController extends Controller
             : response()->json(['message' => 'Token kadaluarsa atau data tidak valid.'], 400);
     }
 
-    public function logout(Request $request) {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['message' => 'Berhasil keluar']);
+    /**
+     * Verify OTP
+     */
+    public function verifyOtp(Request $request)
+    {
+        $request->validate(['email' => 'required|email', 'otp' => 'required|string']);
+
+        // TODO: Implement OTP verification logic
+        return response()->json(['message' => 'OTP verification not yet implemented.'], 501);
     }
 }

@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained('orders')->onDelete('cascade');
             
-            // Ini akan menciptakan reference_id dan reference_type
-            $table->morphs('reference_id'); 
+            // order_type menentukan reference_id mengacu ke booking atau emergency
+            $table->enum('order_type', ['booking', 'emergency'])->default('booking');
+            $table->unsignedBigInteger('reference_id'); // ID dari booking atau emergency
             
             $table->decimal('price', 15, 2);
             $table->timestamps();

@@ -11,12 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
-            $table->id();
-            $table->string('role_name');
-            $table->timestamps();
-        });
-
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             // Menambahkan foreign key untuk role

@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class OrderDetail extends Model
 {
@@ -13,8 +12,8 @@ class OrderDetail extends Model
 
     protected $fillable = [
         'order_id',
-        'reference_id_id',
-        'reference_id_type',
+        'order_type',
+        'reference_id',
         'price',
     ];
 
@@ -27,8 +26,16 @@ class OrderDetail extends Model
         return $this->belongsTo(Order::class);
     }
 
-    public function referenceId(): MorphTo
+    /**
+     * Get the referrable model (Booking atau Emergency)
+     */
+    public function reference()
     {
-        return $this->morphTo();
+        if ($this->order_type === 'booking') {
+            return $this->belongsTo(Booking::class, 'reference_id');
+        } elseif ($this->order_type === 'emergency') {
+            return $this->belongsTo(Emergency::class, 'reference_id');
+        }
+        return null;
     }
 }

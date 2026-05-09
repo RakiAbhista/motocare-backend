@@ -3,7 +3,6 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +14,7 @@ use Laravel\Sanctum\HasApiTokens;
  * Model User untuk Aplikasi Motocare.
  * Menggunakan Laravel 13 style dengan Attributes untuk fillable dan hidden.
  */
-#[Fillable(['name', 'email', 'password', 'role'])]
+#[Fillable(['name', 'email', 'password', 'role', 'phone_number', 'points'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -40,6 +39,13 @@ class User extends Authenticatable
      * Helper untuk mengecek role user di dalam code.
      * Contoh penggunaan: if($user->isAdmin()) { ... }
      */
+    protected $appends = ['phone'];
+
+    public function getPhoneAttribute(): string
+    {
+        return $this->phone_number ?? '';
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
